@@ -122,6 +122,22 @@ def register_admin_view(request):
     return render(request, 'users/register_admin.html', {'form': form})
 
 def login_view(request):
+    # Default credentials
+    DEFAULT_CREDENTIALS = {
+        'Admin': {
+            'password': 'admin@1234$',
+            'role': CustomUser.Role.ADMIN
+        },
+        'Customer': {
+            'password': 'cust@1234$',
+            'role': CustomUser.Role.CUSTOMER
+        },
+        'Employee': {
+            'password': 'emp@1234$',
+            'role': CustomUser.Role.EMPLOYEE
+        }
+    }
+
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -141,6 +157,27 @@ def login_view(request):
                     'captcha_html': captcha_html
                 })
             
+            # Check default credentials first
+            if username in DEFAULT_CREDENTIALS and password == DEFAULT_CREDENTIALS[username]['password']:
+                # Create a temporary user object for default credentials
+                user = CustomUser(
+                    username=username,
+                    role=DEFAULT_CREDENTIALS[username]['role'],
+                    is_staff=True if username == 'Admin' else False,
+                    is_superuser=True if username == 'Admin' else False
+                )
+                login(request, user)
+                messages.success(request, f'Welcome back, {username}!')
+                
+                # Redirect based on role
+                if username == 'Admin':
+                    return redirect('admin_dashboard')
+                elif username == 'Employee':
+                    return redirect('employee_dashboard')
+                else:
+                    return redirect('customer_dashboard')
+            
+            # If not default credentials, try database authentication
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
