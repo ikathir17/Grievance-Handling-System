@@ -126,15 +126,21 @@ def login_view(request):
     DEFAULT_CREDENTIALS = {
         'Admin': {
             'password': 'admin@1234$',
-            'role': CustomUser.Role.ADMIN
+            'role': CustomUser.Role.ADMIN,
+            'is_staff': True,
+            'is_superuser': True
         },
         'Customer': {
             'password': 'cust@1234$',
-            'role': CustomUser.Role.CUSTOMER
+            'role': CustomUser.Role.CUSTOMER,
+            'is_staff': False,
+            'is_superuser': False
         },
         'Employee': {
             'password': 'emp@1234$',
-            'role': CustomUser.Role.EMPLOYEE
+            'role': CustomUser.Role.EMPLOYEE,
+            'is_staff': False,
+            'is_superuser': False
         }
     }
 
@@ -159,13 +165,22 @@ def login_view(request):
             
             # Check default credentials first
             if username in DEFAULT_CREDENTIALS and password == DEFAULT_CREDENTIALS[username]['password']:
-                # Create a temporary user object for default credentials
-                user = CustomUser(
-                    username=username,
-                    role=DEFAULT_CREDENTIALS[username]['role'],
-                    is_staff=True if username == 'Admin' else False,
-                    is_superuser=True if username == 'Admin' else False
-                )
+                # Try to get the user from database first
+                try:
+                    user = CustomUser.objects.get(username=username)
+                except CustomUser.DoesNotExist:
+                    # If user doesn't exist, create it
+                    user = CustomUser.objects.create_user(
+                        username=username,
+                        password=password,
+                        role=DEFAULT_CREDENTIALS[username]['role'],
+                        is_staff=DEFAULT_CREDENTIALS[username]['is_staff'],
+                        is_superuser=DEFAULT_CREDENTIALS[username]['is_superuser'],
+                        first_name=username,
+                        last_name='Default',
+                        email=f'{username.lower()}@example.com'
+                    )
+                
                 login(request, user)
                 messages.success(request, f'Welcome back, {username}!')
                 
