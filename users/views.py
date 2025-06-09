@@ -135,14 +135,30 @@ def login_view(request):
             'role': CustomUser.Role.CUSTOMER,
             'is_staff': False,
             'is_superuser': False
-        },
-        'Employee': {
-            'password': 'emp@1234$',
-            'role': CustomUser.Role.EMPLOYEE,
-            'is_staff': False,
-            'is_superuser': False
         }
     }
+
+    # Add department employees
+    departments = [
+        'Customer Service',
+        'Technical Support',
+        'Development',
+        'Quality Assurance',
+        'Product Management'
+    ]
+
+    # Add 5 employees for each department
+    for dept_index, dept_name in enumerate(departments, 1):
+        for emp_num in range(1, 6):
+            username = f"Employee{emp_num}"
+            password = f"emp{dept_index}@1234$"
+            DEFAULT_CREDENTIALS[username] = {
+                'password': password,
+                'role': CustomUser.Role.EMPLOYEE,
+                'is_staff': False,
+                'is_superuser': False,
+                'department': dept_name
+            }
 
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -170,24 +186,34 @@ def login_view(request):
                     user = CustomUser.objects.get(username=username)
                 except CustomUser.DoesNotExist:
                     # If user doesn't exist, create it
+                    user_data = DEFAULT_CREDENTIALS[username]
                     user = CustomUser.objects.create_user(
                         username=username,
                         password=password,
-                        role=DEFAULT_CREDENTIALS[username]['role'],
-                        is_staff=DEFAULT_CREDENTIALS[username]['is_staff'],
-                        is_superuser=DEFAULT_CREDENTIALS[username]['is_superuser'],
+                        role=user_data['role'],
+                        is_staff=user_data['is_staff'],
+                        is_superuser=user_data['is_superuser'],
                         first_name=username,
                         last_name='Default',
                         email=f'{username.lower()}@example.com'
                     )
+                    
+                    # Set department for employees
+                    if user_data['role'] == CustomUser.Role.EMPLOYEE:
+                        try:
+                            department = Department.objects.get(name=user_data['department'])
+                            user.department = department
+                            user.save()
+                        except Department.DoesNotExist:
+                            pass
                 
                 login(request, user)
                 messages.success(request, f'Welcome back, {username}!')
                 
                 # Redirect based on role
-                if username == 'Admin':
+                if user.role == CustomUser.Role.ADMIN or user.is_superuser:
                     return redirect('admin_dashboard')
-                elif username == 'Employee':
+                elif user.role == CustomUser.Role.EMPLOYEE:
                     return redirect('employee_dashboard')
                 else:
                     return redirect('customer_dashboard')
