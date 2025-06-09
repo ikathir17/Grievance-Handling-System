@@ -7,6 +7,7 @@ from .forms import CustomUserCreationForm, LoginForm
 from .models import CustomUser, Department
 from .utils import generate_captcha
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +182,9 @@ def login_view(request):
                 else:
                     return redirect('customer_dashboard')
             else:
+                # On Vercel, if authentication fails, show a message about using default admin
+                if 'VERCEL' in os.environ:
+                    messages.warning(request, 'On Vercel deployment, please use the default admin credentials: Username: Admin, Password: admin@1234$')
                 form.add_error(None, 'Invalid username or password')
     else:
         form = LoginForm()

@@ -3,6 +3,14 @@
 {% block page_title %}Admin Dashboard{% endblock %}
 
 {% block content %}
+{% if 'VERCEL' in request.META.HTTP_HOST %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    <strong>Note:</strong> This is a Vercel deployment. The database is temporary and will be reset on each deployment. 
+    Please use the default admin credentials (Username: Admin, Password: admin@1234$) to log in.
+</div>
+{% endif %}
+
 <!-- Stats Grid -->
 <div class="stats-grid">
     <div class="stat-card">
