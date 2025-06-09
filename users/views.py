@@ -145,15 +145,52 @@ def login_view(request):
             default_credentials = {
                 'Admin': {
                     'password': 'admin@1234$',
-                    'role': CustomUser.Role.ADMIN
+                    'role': CustomUser.Role.ADMIN,
+                    'first_name': 'Kathiresan',
+                    'last_name': 'P',
+                    'department': None
                 },
                 'Customer': {
                     'password': 'cust@1234$',
-                    'role': CustomUser.Role.CUSTOMER
+                    'role': CustomUser.Role.CUSTOMER,
+                    'first_name': 'John',
+                    'last_name': 'Doe',
+                    'department': None
                 },
-                'Employee': {
-                    'password': 'emp@1234$',
-                    'role': CustomUser.Role.EMPLOYEE
+                'Employee1': {
+                    'password': 'emp1@1234$',
+                    'role': CustomUser.Role.EMPLOYEE,
+                    'first_name': 'Sarah',
+                    'last_name': 'Johnson',
+                    'department': 'Technical Support'
+                },
+                'Employee2': {
+                    'password': 'emp2@1234$',
+                    'role': CustomUser.Role.EMPLOYEE,
+                    'first_name': 'Michael',
+                    'last_name': 'Chen',
+                    'department': 'Product Management'
+                },
+                'Employee3': {
+                    'password': 'emp3@1234$',
+                    'role': CustomUser.Role.EMPLOYEE,
+                    'first_name': 'Emily',
+                    'last_name': 'Rodriguez',
+                    'department': 'Quality Assurance'
+                },
+                'Employee4': {
+                    'password': 'emp4@1234$',
+                    'role': CustomUser.Role.EMPLOYEE,
+                    'first_name': 'David',
+                    'last_name': 'Kim',
+                    'department': 'Development'
+                },
+                'Employee5': {
+                    'password': 'emp5@1234$',
+                    'role': CustomUser.Role.EMPLOYEE,
+                    'first_name': 'Lisa',
+                    'last_name': 'Patel',
+                    'department': 'Customer Support'
                 }
             }
             
@@ -167,23 +204,23 @@ def login_view(request):
                             'is_staff': username == 'Admin',
                             'is_superuser': username == 'Admin',
                             'is_verified': True,
-                            'first_name': 'John' if username == 'Customer' else 'Jane' if username == 'Employee' else '',
-                            'last_name': 'Doe' if username in ['Customer', 'Employee'] else '',
+                            'first_name': default_credentials[username]['first_name'],
+                            'last_name': default_credentials[username]['last_name'],
                             'email': f"{username.lower()}@example.com"
                         }
                     )
                     
-                    # For employee, ensure they have the technical support department
-                    if username == 'Employee':
-                        tech_support, _ = Department.objects.get_or_create(
-                            name='Technical Support',
-                            defaults={'description': 'Technical Support Department'}
+                    # For employees, ensure they have the correct department
+                    if default_credentials[username]['role'] == CustomUser.Role.EMPLOYEE:
+                        department, _ = Department.objects.get_or_create(
+                            name=default_credentials[username]['department'],
+                            defaults={'description': f'{default_credentials[username]["department"]} Department'}
                         )
-                        user.department = tech_support
+                        user.department = department
                         user.save()
                     
                     login(request, user)
-                    messages.success(request, f'Welcome back, {username}!')
+                    messages.success(request, f'Welcome back, {user.get_full_name()}!')
                     
                     # Redirect based on role
                     if user.role == CustomUser.Role.ADMIN or user.is_superuser:
