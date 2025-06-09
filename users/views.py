@@ -122,44 +122,6 @@ def register_admin_view(request):
     return render(request, 'users/register_admin.html', {'form': form})
 
 def login_view(request):
-    # Default credentials
-    DEFAULT_CREDENTIALS = {
-        'Admin': {
-            'password': 'admin@1234$',
-            'role': CustomUser.Role.ADMIN,
-            'is_staff': True,
-            'is_superuser': True
-        },
-        'Customer': {
-            'password': 'cust@1234$',
-            'role': CustomUser.Role.CUSTOMER,
-            'is_staff': False,
-            'is_superuser': False
-        }
-    }
-
-    # Add department employees
-    departments = [
-        'Customer Service',
-        'Technical Support',
-        'Development',
-        'Quality Assurance',
-        'Product Management'
-    ]
-
-    # Add 5 employees for each department
-    for dept_index, dept_name in enumerate(departments, 1):
-        for emp_num in range(1, 6):
-            username = f"Employee{emp_num}"
-            password = f"emp{dept_index}@1234$"
-            DEFAULT_CREDENTIALS[username] = {
-                'password': password,
-                'role': CustomUser.Role.EMPLOYEE,
-                'is_staff': False,
-                'is_superuser': False,
-                'department': dept_name
-            }
-
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -180,63 +142,75 @@ def login_view(request):
                 })
             
             # Check default credentials first
-            if username in DEFAULT_CREDENTIALS and password == DEFAULT_CREDENTIALS[username]['password']:
-                # Try to get the user from database first
-                try:
-                    user = CustomUser.objects.get(username=username)
-                except CustomUser.DoesNotExist:
-                    # If user doesn't exist, create it
-                    user_data = DEFAULT_CREDENTIALS[username]
-                    user = CustomUser.objects.create_user(
+            default_credentials = {
+                'Admin': {
+                    'password': 'admin@1234$',
+                    'role': CustomUser.Role.ADMIN
+                },
+                'Customer': {
+                    'password': 'cust@1234$',
+                    'role': CustomUser.Role.CUSTOMER
+                },
+                'Employee': {
+                    'password': 'emp@1234$',
+                    'role': CustomUser.Role.EMPLOYEE
+                }
+            }
+            
+            if username in default_credentials:
+                if password == default_credentials[username]['password']:
+                    # Create or get the default user
+                    user, created = CustomUser.objects.get_or_create(
                         username=username,
-                        password=password,
-                        role=user_data['role'],
-                        is_staff=user_data['is_staff'],
-                        is_superuser=user_data['is_superuser'],
-                        first_name=username,
-                        last_name='Default',
-                        email=f'{username.lower()}@example.com'
+                        defaults={
+                            'role': default_credentials[username]['role'],
+                            'is_staff': username == 'Admin',
+                            'is_superuser': username == 'Admin',
+                            'is_verified': True
+                        }
                     )
                     
-                    # Set department for employees
-                    if user_data['role'] == CustomUser.Role.EMPLOYEE:
-                        try:
-                            department = Department.objects.get(name=user_data['department'])
-                            user.department = department
-                            user.save()
-                        except Department.DoesNotExist:
-                            pass
-                
-                login(request, user)
-                messages.success(request, f'Welcome back, {username}!')
-                
-                # Redirect based on role
-                if user.role == CustomUser.Role.ADMIN or user.is_superuser:
-                    return redirect('admin_dashboard')
-                elif user.role == CustomUser.Role.EMPLOYEE:
-                    return redirect('employee_dashboard')
+                    # For employee, ensure they have the technical support department
+                    if username == 'Employee':
+                        tech_support, _ = Department.objects.get_or_create(
+                            name='Technical Support',
+                            defaults={'description': 'Technical Support Department'}
+                        )
+                        user.department = tech_support
+                        user.save()
+                    
+                    login(request, user)
+                    messages.success(request, f'Welcome back, {username}!')
+                    
+                    # Redirect based on role
+                    if user.role == CustomUser.Role.ADMIN or user.is_superuser:
+                        return redirect('admin_dashboard')
+                    elif user.role == CustomUser.Role.EMPLOYEE:
+                        return redirect('employee_dashboard')
+                    else:
+                        return redirect('customer_dashboard')
                 else:
-                    return redirect('customer_dashboard')
-            
-            # If not default credentials, try database authentication
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f'Welcome back, {user.get_full_name()}!')
-                
-                # Redirect based on role
-                if user.role == CustomUser.Role.ADMIN or user.is_superuser:
-                    return redirect('admin_dashboard')
-                elif user.role == CustomUser.Role.EMPLOYEE:
-                    return redirect('employee_dashboard')
-                else:
-                    return redirect('customer_dashboard')
+                    form.add_error(None, 'Invalid username or password')
             else:
-                form.add_error(None, 'Invalid username or password')
+                # If not a default user, try normal authentication
+                user = authenticate(request, username=username, password=password)
+                if user is not None:
+                    login(request, user)
+                    messages.success(request, f'Welcome back, {user.get_full_name()}!')
+                    
+                    # Redirect based on role
+                    if user.role == CustomUser.Role.ADMIN or user.is_superuser:
+                        return redirect('admin_dashboard')
+                    elif user.role == CustomUser.Role.EMPLOYEE:
+                        return redirect('employee_dashboard')
+                    else:
+                        return redirect('customer_dashboard')
+                else:
+                    form.add_error(None, 'Invalid username or password')
     else:
         form = LoginForm()
     
-    # Generate new CAPTCHA
+    # Generate CAPTCHA
     captcha_text, captcha_html = generate_captcha()
     request.session['captcha_text'] = captcha_text
     
