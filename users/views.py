@@ -166,7 +166,10 @@ def login_view(request):
                             'role': default_credentials[username]['role'],
                             'is_staff': username == 'Admin',
                             'is_superuser': username == 'Admin',
-                            'is_verified': True
+                            'is_verified': True,
+                            'first_name': 'John' if username == 'Customer' else 'Jane' if username == 'Employee' else '',
+                            'last_name': 'Doe' if username in ['Customer', 'Employee'] else '',
+                            'email': f"{username.lower()}@example.com"
                         }
                     )
                     
