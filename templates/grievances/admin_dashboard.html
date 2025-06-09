@@ -3,14 +3,6 @@
 {% block page_title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-{% if 'VERCEL' in request.META.HTTP_HOST %}
-<div class="alert alert-warning">
-    <i class="fas fa-exclamation-triangle"></i>
-    <strong>Note:</strong> This is a Vercel deployment. The database is temporary and will be reset on each deployment. 
-    Please use the default admin credentials (Username: Admin, Password: admin@1234$) to log in.
-</div>
-{% endif %}
-
 <!-- Stats Grid -->
 <div class="stats-grid">
     <div class="stat-card">
@@ -41,13 +33,6 @@
             <i class="fas fa-exclamation-triangle icon-danger"></i>
         </div>
     </div>
-</div>
-
-<!-- Admin DB Button -->
-<div class="admin-db-button">
-    <a href="{% if 'VERCEL' in request.META.HTTP_HOST %}/admin{% else %}http://127.0.0.1:8000/admin{% endif %}" class="btn btn-primary" target="_blank">
-        <i class="fas fa-database"></i> Admin DB
-    </a>
 </div>
 
 <!-- Status Distribution Chart -->
@@ -560,34 +545,6 @@
 
 .btn-success:hover .fas.fa-download {
     color: var(--success) !important;
-}
-
-.admin-db-button {
-    text-align: center;
-    margin: 1rem 0;
-}
-
-.admin-db-button .btn {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background-color: var(--primary);
-    color: white;
-    border-radius: 0.5rem;
-    transition: all 0.3s ease;
-}
-
-.admin-db-button .btn:hover {
-    background-color: var(--primary-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.admin-db-button .fas {
-    font-size: 1.1rem;
 }
 </style>
 

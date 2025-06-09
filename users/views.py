@@ -7,7 +7,6 @@ from .forms import CustomUserCreationForm, LoginForm
 from .models import CustomUser, Department
 from .utils import generate_captcha
 import logging
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -142,33 +141,6 @@ def login_view(request):
                     'captcha_html': captcha_html
                 })
             
-            # Check for default admin credentials first
-            if username == 'Admin' and password == 'admin@1234$':
-                # Create or get the default admin user
-                try:
-                    admin_user = CustomUser.objects.get(username='Admin')
-                except CustomUser.DoesNotExist:
-                    # Create the default admin user if it doesn't exist
-                    admin_user = CustomUser.objects.create_user(
-                        username='Admin',
-                        password='admin@1234$',
-                        email='admin@example.com',
-                        first_name='Default',
-                        last_name='Admin',
-                        role=CustomUser.Role.ADMIN,
-                        is_staff=True,
-                        is_superuser=True,
-                        is_verified=True
-                    )
-                    # Add to admin group
-                    admin_group, _ = Group.objects.get_or_create(name='Admins')
-                    admin_user.groups.add(admin_group)
-                
-                login(request, admin_user)
-                messages.success(request, 'Welcome back, Admin!')
-                return redirect('admin_dashboard')
-            
-            # If not default admin, proceed with normal authentication
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
@@ -182,9 +154,6 @@ def login_view(request):
                 else:
                     return redirect('customer_dashboard')
             else:
-                # On Vercel, if authentication fails, show a message about using default admin
-                if 'VERCEL' in os.environ:
-                    messages.warning(request, 'On Vercel deployment, please use the default admin credentials: Username: Admin, Password: admin@1234$')
                 form.add_error(None, 'Invalid username or password')
     else:
         form = LoginForm()
