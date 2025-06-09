@@ -108,22 +108,6 @@ python manage.py runserver
 - Provide feedback
 - View grievance history
 
-## Project Structure
-grievance_system/
-├── grievances/ # Grievance management app
-│ ├── models.py # Database models
-│ ├── views.py # View logic
-│ ├── forms.py # Form definitions
-│ └── templates/ # HTML templates
-├── users/ # User management app
-│ ├── models.py # User models
-│ ├── views.py # Authentication views
-│ └── forms.py # User forms
-├── templates/ # Base templates
-├── static/ # Static files
-│ └── css/ # Stylesheets
-└── manage.py # Django management
-
 ## Contact
 
 ## Kathiresan P
